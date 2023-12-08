@@ -2,7 +2,6 @@ const express = require('express');
 const router = express();
 const jwt = require('jsonwebtoken');
 const axios = require('axios'); // Add axios for HTTP requests
-const roomModal = require('../Model/roomModel');
 require('dotenv').config();
 
 // Middleware to check JWT
@@ -21,41 +20,37 @@ function queryCheck(req, res, next) {
 // Middleware to verify room
 async function verifyroom(req, res, next) {
   try {
-    // Fetch room data from MongoDB based on room ID
-    const room = await roomModal.findById(req.params.roomId);
+    // Fetch room data from IPFS
+    const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${req.params.roomId}`);
+    const roomdata = ipfsResponse.data;
 
-    if (!room || !room.ipfsHash) {
+    if (!roomdata) {
       console.log('No room found');
       res.render('404');
     } else {
-      // Fetch room data from IPFS using the stored IPFS hash
-      const ipfsResponse = await axios.get(`${room.ipfsHash}`);
-      const roomdata = ipfsResponse.data;
-
       req.users = roomdata;
       next();
     }
   } catch (error) {
     console.log(error);
-    res.render('404'); // Handle the case when IPFS fetch fails or room not found in MongoDB
+    res.render('404'); // Handle the case when IPFS fetch fails
   }
 }
 
 // Route handler for joined room
-router.get('/joined/:roomId', queryCheck, verifyroom, (req, res) => {
-  console.log('User : ',req.user);
-  console.log('req params : ', req.params);
-  // if (req.user.id === req.params.roomId)
+router.get('/joined/:roomId', queryCheck, verifyroom, async (req, res) => {
+  // Parse roomDataString as JSON
+  const room = JSON.parse(Object.keys(req.users)[0]);
+  
     res.render('room', {
       title: 'Room',
       username: req.user.username,
       page: 'student',
       menuId: 'home',
-      labname: req.users.labname,
-      by: req.users.createdBy,
-      language: req.users.languageId,
+      labname: room.labname,
+      by: room.createdBy,
+      language: room.languageId,
     });
-  // else res.redirect(`/room/join/${req.params.roomId}`);
 });
 
 // Route handler for joining a room

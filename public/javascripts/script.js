@@ -15,6 +15,7 @@ if (languageid == 62) {
 } else {
   mode = 'text/x-python';
 }
+
 var editor = CodeMirror.fromTextArea(textinput, {
   lineNumbers: true,
   tabSize: 2,
@@ -123,7 +124,6 @@ socket.on('connect', function () {
 });
 
 document.getElementById('submitcode').addEventListener('click', () => {
-  console.log('code Submitted');
   let id = window.location.toString().split('room/joined/')[1];
   let code = editor.getValue();
   axios

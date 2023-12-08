@@ -3,7 +3,6 @@ var bodyParser = require('body-parser');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-const mongoose = require('mongoose');
 var indexRouter = require('./routes/index');
 const api = require('./routes/api');
 const rooomRouter = require('./routes/room');
@@ -44,21 +43,6 @@ app.use(function (err, req, res, next) {
 const server = app.listen(PORT, () => {
   console.log('Server connecter: ' + PORT);
 });
-
-// MongoDB setup
-
-mongoose
-  .connect('mongodb+srv://admin:abcd432@cluster0.r5s2y7z.mongodb.net/codeshare', {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log('DB CONNECTION SUCCESSFULL !'))
-  .catch((err) => {
-    console.log(err);
-    console.log('DB connection failed');
-  });
 
 //initialize socket for the server
 

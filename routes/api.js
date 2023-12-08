@@ -47,10 +47,12 @@ const fetchRoomDataFromIPFSWithRoomId = async (roomId) => {
 };
 
 // Function to upload code to IPFS
-const uploadCodeToIPFS = async (code) => {
+const uploadCodeToIPFS = async (username, id, code) => {
   const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
   const codeData = {
+    username: username,
     code: code,
+    id: id
   };
 
   return axios.post(url, codeData, {
@@ -144,17 +146,44 @@ router.post('/joinroom', async (req, res) => {
 router.post('/deleteroom', async (req, res) => {
   const roomId = req.body.id;
 
-  // Fetch room data from IPFS (not needed for deletion in this case)
+  // Make a request to Pinata to unpin (delete) the content associated with the IPFS hash
+  const pinataEndpoint = `https://api.pinata.cloud/pinning/unpin/${roomId}`;
 
-  // Delete room from IPFS (not needed for deletion in this case)
+  try {
+    const response = await axios.delete(pinataEndpoint, {
+      headers: {
+        pinata_api_key: key,
+        pinata_secret_api_key: secret,
+      },
+    });
 
-  return res.json({
-    status: 200,
-    ok: true,
-    data: {
-      msg: 'Room deleted successfully',
-    },
-  });
+    if (response.status === 200) {
+      return res.json({
+        status: 200,
+        ok: true,
+        data: {
+          msg: 'Room deleted successfully from IPFS',
+        },
+      });
+    } else {
+      return res.json({
+        status: response.status,
+        ok: false,
+        data: {
+          msg: 'Error deleting room from IPFS',
+        },
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.json({
+      status: 500,
+      ok: false,
+      data: {
+        msg: 'Internal server error',
+      },
+    });
+  }
 });
 
 // create room
@@ -185,8 +214,12 @@ router.post('/create', async (req, res) => {
 
     if (ipfsResponse.success) {
       // Include the IPFS hash in your response
-      roomData.ipfsHash = ipfsResponse.pinataURL;
+      // Assuming ipfsResponse.pinataURL is a string like "https://gateway.pinata.cloud/ipfs/<hash>"
+      const pinataUrl = new URL(ipfsResponse.pinataURL);
+      const ipfsHash = pinataUrl.pathname.split('/').pop();
 
+      // Now, ipfsHash contains the hash part of the URL
+      roomData.ipfsHash = ipfsHash;
       return res.send({ admincode: admincode, id: roomData.ipfsHash, ipfsHash: roomData.ipfsHash }).json();
     } else {
       // Handle IPFS upload failure
@@ -206,7 +239,7 @@ router.post('/submitcode', async (req, res) => {
   const { username, id, code } = req.body;
 
   // Upload code to IPFS
-  const ipfsHash = await uploadCodeToIPFS(code);
+  const ipfsHash = await uploadCodeToIPFS(username, id, code);
 
   if (!ipfsHash) {
     return res.json({
@@ -219,7 +252,6 @@ router.post('/submitcode', async (req, res) => {
   }
 
   // Save code details (not needed for submission in this case)
-
   return res.json({
     status: 200,
     ok: true,
@@ -229,6 +261,29 @@ router.post('/submitcode', async (req, res) => {
   });
 });
 
-// Generate Report (not needed for this case)
+// Generate Report
+router.post('/getcode', (req, res) => {
+  console.log(req.body.roomId);
+  userModal.find({ roomId: req.body.roomId }, function (err, Data) {
+    if (!err)
+      return res.json({
+        status: 200,
+
+        data: {
+          code: Data,
+          labname: req.labname,
+        },
+      });
+    else {
+      return res.json({
+        status: 401,
+
+        data: {
+          msg: 'Some Error Occured',
+        },
+      });
+    }
+  });
+});
 
 module.exports = router;
