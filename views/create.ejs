@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <% include partials/head %>
+</head>
+
+<body>
+    <img class="wave" src="">
+    <div class="container">
+        <div class="img">
+            <img src="/images/bg.png">
+        </div>
+        <div class="login-content">
+            <form id='createform'>
+                <img src="/images/avatar.svg">
+                <h2 class="title">Fill the details</h2>
+                <div class="input-div one">
+                    <div class="i">
+                        <!-- <i class="fas fa-user"></i> -->
+                    </div>
+                    <div class="div">
+                        <!-- <h5>Room name</h5> -->
+                        <input required type="text" class="input" placeholder="Lab Name" value='' id='labname'>
+                    </div>
+                </div>
+                <div class="input-div two">
+                    <div class="i">
+                    </div>
+                    <div class="div">
+                        <input required type="text" class="input" placeholder="User name" value="" id='createdby'>
+                    </div>
+                </div>
+                <div class="input-div three">
+                    <div class="i">
+                    </div>
+                    <!-- <div class="div"> -->
+                    <select required type="text" class="select" value="" id='language'>
+                        <option disabled selected value> -- select a language -- </option>
+                        <option value='49'>C</option>
+                        <option value='54'>C++ </option>
+                        <option value='62'>Java(13.0.1)</option>
+                        <option value="71">Python(3.8.1)</option>
+                    </select>
+                    <!-- </div> -->
+                </div>
+                <div class="input-div pass">
+                    <div class="i">
+                    </div>
+                    <div class="div">
+                        <input required type="password" class="input" placeholder="Enter Password" value=""
+                            id='password'>
+                    </div>
+                </div>
+                <!-- <a href="#">Create Room</a> -->
+                <button class="btn" type="submit" id='generatelink'>Get Link</button>
+            </form>
+        </div>
+
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-8 mx-auto" id='linkmodal'>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // const bcrypt = require('bcrypt');
+        // const ethers = require('ethers');
+        import bcrypt from 'bcryptjs';
+
+        const uploadJSONToIPFS = async (JSONBody) => {
+            console.log('=== upload json to ipfs ===');
+            const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
+
+            return axios
+                .post(url, JSONBody, {
+                    headers: {
+                        pinata_api_key: key,
+                        pinata_secret_api_key: secret,
+                    },
+                })
+                .then(function (response) {
+                    console.log('response of upload json to ipfs', response.data);
+                    return {
+                        success: true,
+                        pinataURL: 'https://gateway.pinata.cloud/ipfs/' + response.data.IpfsHash,
+                    };
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    return {
+                        success: false,
+                        message: error.message,
+                    };
+                });
+        };
+
+        document.getElementById('createform').addEventListener('submit', async (e) => {
+            console.log('=== craete form clicked ===');
+            e.preventDefault();
+
+            const labname = document.getElementById('labname').value;
+            const by = document.getElementById('createdby').value;
+            const password = document.getElementById('password').value;
+            const language = document.getElementById('language').value;
+            const windowEth = window.ethereum;
+
+            let admincode = Math.random().toString(36).slice(2);
+
+            bcrypt.hash(password, 10, async (err, hash) => {
+                if (err) {
+                    console.log(err);
+                    return res.json({
+                        status: 401,
+                        ok: true,
+                        data: {
+                            msg: 'Some Error Occurred',
+                        },
+                    });
+                }
+
+                let roomData = {
+                    labname: labname,
+                    password: hash,
+                    createdBy: by,
+                    adminCode: admincode,
+                    languageId: language,
+                };
+
+                // windowethereum = req.body.windowEth;
+                console.log('=== roomData ===', roomData);
+                // Upload room data to IPFS
+                const ipfsResponse = await uploadJSONToIPFS(JSON.stringify(roomData));
+
+                if (ipfsResponse.success) {
+                    // Include the IPFS hash in your response
+                    // Assuming ipfsResponse.pinataURL is a string like "https://gateway.pinata.cloud/ipfs/<hash>"
+                    const pinataUrl = new URL(ipfsResponse.pinataURL);
+                    const ipfsHash = pinataUrl.pathname.split('/').pop();
+
+                    // Now, ipfsHash contains the hash part of the URL
+                    roomData.ipfsHash = ipfsHash;
+                    console.log('roomData', roomData);
+
+
+                    // const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    // const signer = provider.getSigner();
+                    // let contract = new ethers.Contract(Marketplace.address, Marketplace.abi, signer)
+                    // let transaction = await contract.createToken(ipfsHash, true, false, ipfsHash);
+
+                    // await transaction.wait()
+                    // console.log('transaction hash')
+                    // console.log(transaction)
+                } else {
+                    console.log('Failed to upload room data to IPFS');
+                    // Handle IPFS upload failure
+                    // return res.json({
+                    //     status: 401,
+                    //     ok: true,
+                    //     data: {
+                    //         msg: 'Failed to upload room data to IPFS',
+                    //     },
+                    // });
+                }
+            });
+
+
+
+
+            // const provider = new ethers.providers.Web3Provider(windowEth);
+            // const signer = provider.getSigner();
+            // console.log('signer', signer);
+
+            // let contract = new ethers.Contract(Marketplace.address, Marketplace.abi, signer)
+            // let transaction = await contract.createToken(ipfsHash, true, false, null);
+
+            try {
+                const res = await axios.post('/api/v1/create', {
+                    password,
+                    by,
+                    labname,
+                    language
+                });
+
+                console.log("Response:", res.data);
+                // Handle the response as needed
+            } catch (err) {
+                console.error("Error:", err);
+                // Handle errors
+            }
+        });
+    </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs/dist/bcrypt.js"></script>
+    <script src="/javascripts/tata.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="/javascripts/roomCreation.js"></script>
+</body>

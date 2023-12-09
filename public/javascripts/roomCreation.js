@@ -1,3 +1,5 @@
+
+
 // Copy function to copy link
 function copy() {
   var copyText = document.getElementById('link');
@@ -18,17 +20,29 @@ document.getElementById('createform').addEventListener('submit', (e) => {
   const password = document.getElementById('password').value;
   const language = document.getElementById('language').value;
 
+  // console.log("this is window.ethereum",window.ethereum);
+  // console.log('before axios');
   axios
     .post('/api/v1/create', {
       password,
       by,
       labname,
-      language,
+      language
     })
-    .then((res) => {
+    .then(async (res) => {
       console.log("this is res data ",res.data);
       adminCode = res.data.admincode;
       roomid = res.data.id;
+
+      // const provider = new ethers.providers.Web3Provider(window.ethereum);
+      // const signer = provider.getSigner();
+      // let contract = new ethers.Contract(Marketplace.address, Marketplace.abi, signer)
+      // let transaction = await contract.createToken(ipfsHash, true, false, ipfsHash);
+
+      // await transaction.wait()
+      // console.log('transaction hash')
+      // console.log(transaction)
+
       document
         .getElementById('linkmodal')
         .querySelectorAll('.modal-container')
