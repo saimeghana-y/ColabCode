@@ -19,6 +19,7 @@ function queryCheck(req, res, next) {
 
 // Middleware to verify room
 async function verifyroom(req, res, next) {
+  console.log('in verify room');
   try {
     // Fetch room data from IPFS
     const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${req.params.roomId}`);
@@ -55,6 +56,7 @@ router.get('/joined/:roomId', queryCheck, verifyroom, async (req, res) => {
 
 // Route handler for joining a room
 router.get('/join/:roomId', verifyroom, (req, res) => {
+  console.log('room data : ', req.users);
   res.render('joinroom', { page: 'Join', menuId: 'home' });
 });
 

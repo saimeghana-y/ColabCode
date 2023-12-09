@@ -189,53 +189,60 @@ router.post('/deleteroom', async (req, res) => {
 
 // create room
 router.post('/create', async (req, res) => {
-  // let admincode = Math.random().toString(36).slice(2);
-  // bcrypt.hash(req.body.password, 10, async (err, hash) => {
-  //   if (err) {
-  //     console.log(err);
-  //     return res.json({
-  //       status: 401,
-  //       ok: true,
-  //       data: {
-  //         msg: 'Some Error Occurred',
-  //       },
-  //     });
-  //   }
+  let admincode = Math.random().toString(36).slice(2);
+  bcrypt.hash(req.body.password, 10, async (err, hash) => {
+    if (err) {
+      console.log(err);
+      return res.json({
+        status: 401,
+        ok: true,
+        data: {
+          msg: 'Some Error Occurred',
+        },
+      });
+    }
 
-  //   let roomData = {
-  //     labname: req.body.labname,
-  //     password: hash,
-  //     createdBy: req.body.by,
-  //     adminCode: admincode,
-  //     languageId: req.body.language,
-  //   };
+    let roomData = {
+      labname: req.body.labname,
+      password: hash,
+      createdBy: req.body.by,
+      adminCode: admincode,
+      languageId: req.body.language,
+    };
 
-  //   // windowethereum = req.body.windowEth;
-  //   console.log('=== roomData ===', roomData);
-  //   // Upload room data to IPFS
-  //   const ipfsResponse = await uploadJSONToIPFS(JSON.stringify(roomData));
+    // windowethereum = req.body.windowEth;
+    console.log('=== roomData ===', roomData);
+    return res.json({
+      status: 200,
+      ok: true,
+      data: {
+        roomData: roomData,
+      },
+    });
+    // Upload room data to IPFS
+    // const ipfsResponse = await uploadJSONToIPFS(JSON.stringify(roomData));
 
-  //   if (ipfsResponse.success) {
-  //     // Include the IPFS hash in your response
-  //     // Assuming ipfsResponse.pinataURL is a string like "https://gateway.pinata.cloud/ipfs/<hash>"
-  //     const pinataUrl = new URL(ipfsResponse.pinataURL);
-  //     const ipfsHash = pinataUrl.pathname.split('/').pop();
+    // if (ipfsResponse.success) {
+    //   // Include the IPFS hash in your response
+    //   // Assuming ipfsResponse.pinataURL is a string like "https://gateway.pinata.cloud/ipfs/<hash>"
+    //   const pinataUrl = new URL(ipfsResponse.pinataURL);
+    //   const ipfsHash = pinataUrl.pathname.split('/').pop();
 
-  //     // Now, ipfsHash contains the hash part of the URL
-  //     roomData.ipfsHash = ipfsHash;
+    //   // Now, ipfsHash contains the hash part of the URL
+    //   roomData.ipfsHash = ipfsHash;
 
-  //     return res.send({ admincode: admincode, id: roomData.ipfsHash, ipfsHash: roomData.ipfsHash }).json();
-  //   } else {
-  //     // Handle IPFS upload failure
-  //     return res.json({
-  //       status: 401,
-  //       ok: true,
-  //       data: {
-  //         msg: 'Failed to upload room data to IPFS',
-  //       },
-  //     });
-  //   }
-  // });
+    //   return res.send({ admincode: admincode, id: roomData.ipfsHash, ipfsHash: roomData.ipfsHash }).json();
+    // } else {
+    //   // Handle IPFS upload failure
+    //   return res.json({
+    //     status: 401,
+    //     ok: true,
+    //     data: {
+    //       msg: 'Failed to upload room data to IPFS',
+    //     },
+    //   });
+    // }
+  });
 });
 
 // Code submission with IPFS integration
