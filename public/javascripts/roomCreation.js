@@ -12,8 +12,8 @@ function copy() {
   });
 }
 
-const key = 'XXXX';
-const secret = 'XXXXX';
+const key = '18371adc6bf78bca7a20';
+const secret = '6cdace2ed18102d7a10e61dd8945bb519ddc08a95e61a96c223732aec7bec78e';
 
 const uploadJSONToIPFS = async (JSONBody) => {
   const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;

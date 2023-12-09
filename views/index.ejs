@@ -19,40 +19,8 @@
             <h2 class="title">Welcome</h2>
             <div class="btns">
                 <a href="./create"><button class="btn">Create Room</button></a>
+                <a href="./createClassroom"><button class="btn">Create Classroom</button></a>
                 </div>
-
-            <div class="btns">
-                <button class="btn connect-wallet-btn" onclick="connectWallet()">{connected ? "Connected" : "Connect Wallet"}</button>
-            </div>
-
-            <script>
-                let connected = false;
-
-                async function connectWallet() {
-                    const { ethereum } = window;
-
-                    if (!ethereum) {
-                        alert("Please install MetaMask to use this feature.");
-                        return;
-                    }
-
-                    try {
-                        const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-
-                        connected = true;
-                        // Update the button text and style
-                        const connectButton = document.querySelector(".connect-wallet-btn");
-                        connectButton.textContent = "Connected";
-                        connectButton.classList.add("connected");
-
-                        // You can now access the user's address
-                        const address = accounts[0];
-                        console.log(`Connected to address: ${address}`);
-                    } catch (error) {
-                        console.error(error);
-                    }
-                }
-            </script>
         </div>
     </div>
 

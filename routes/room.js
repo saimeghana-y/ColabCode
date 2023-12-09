@@ -60,4 +60,10 @@ router.get('/join/:roomId', verifyroom, (req, res) => {
   res.render('joinroom', { page: 'Join', menuId: 'home' });
 });
 
+// Route handler for joining a room
+router.get('/classroom/join/:roomId', verifyroom, (req, res) => {
+  console.log('room data : ', req.users);
+  res.render('joinroom', { page: 'Join', menuId: 'home' });
+});
+
 module.exports = router;

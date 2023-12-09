@@ -9,30 +9,60 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const ethers = require('ethers');
 
-const uploadJSONToIPFS = async (JSONBody) => {
-  const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
+const { AccessToken, Role } = require('@huddle01/server-sdk/auth');
 
-  return axios
-    .post(url, JSONBody, {
-      headers: {
-        pinata_api_key: key,
-        pinata_secret_api_key: secret,
-      },
-    })
-    .then(function (response) {
-      return {
-        success: true,
-        pinataURL: 'https://gateway.pinata.cloud/ipfs/' + response.data.IpfsHash,
-      };
-    })
-    .catch(function (error) {
-      console.log(error);
-      return {
-        success: false,
-        message: error.message,
-      };
-    });
+// Huddle01 API key and secret
+const huddleApiKey = 'g9540BSl0aG1U5Q3TKyBSJYWlGPxhxoa';
+
+// Create and join Huddle01 room
+const createAndJoinHuddleRoom = async () => {
+  try {
+    const response = await fetch(
+      "https://api.huddle01.com/api/v1/create-room",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          title: "Testing",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": huddleApiKey,
+        },
+      }
+    );
+    const data = await response.json();
+
+    const userToken = await createAccessToken(data.data.roomId);
+    // room = await huddle.joinRoom({
+    //   roomId: data.data.roomId,
+    //   token: userToken,
+    // });
+    // updateRoomInfo();
+    return [data.data.roomId, userToken];
+  } catch (error) {
+    console.error(error);
+  }
 };
+
+async function createAccessToken(userRoomId) {
+  var ap = 'g9540BSl0aG1U5Q3TKyBSJYWlGPxhxoa';
+  const accessToken = new AccessToken({
+    apiKey: ap,
+      roomId: userRoomId,
+      role: Role.HOST,
+      permissions: {
+          admin: true,
+          canConsume: true,
+          canProduce: true,
+          canProduceSources: { cam: true, mic: true, screen: true },
+          canRecvData: true,
+          canSendData: true,
+          canUpdateMetadata: true,
+      },
+  });
+  const userToken = await accessToken.toJwt();
+  return userToken;
+}
 
 // Function to fetch room data from IPFS with room ID
 const fetchRoomDataFromIPFSWithRoomId = async (roomId) => {
@@ -219,29 +249,46 @@ router.post('/create', async (req, res) => {
         roomData: roomData,
       },
     });
-    // Upload room data to IPFS
-    // const ipfsResponse = await uploadJSONToIPFS(JSON.stringify(roomData));
+  });
+});
 
-    // if (ipfsResponse.success) {
-    //   // Include the IPFS hash in your response
-    //   // Assuming ipfsResponse.pinataURL is a string like "https://gateway.pinata.cloud/ipfs/<hash>"
-    //   const pinataUrl = new URL(ipfsResponse.pinataURL);
-    //   const ipfsHash = pinataUrl.pathname.split('/').pop();
+// create class room
+router.post('/createClassroom', async (req, res) => {
+  console.log('class req  : ',req)
+  bcrypt.hash(req.body.password, 10, async (err, hash) => {
+    if (err) {
+      console.log(err);
+      return res.json({
+        status: 401,
+        ok: true,
+        data: {
+          msg: 'Some Error Occurred',
+        },
+      });
+    }
 
-    //   // Now, ipfsHash contains the hash part of the URL
-    //   roomData.ipfsHash = ipfsHash;
+    let roomData = {
+      labname: req.body.labname,
+      password: hash,
+      createdBy: req.body.by,
+      languageId: req.body.language,
+    };
 
-    //   return res.send({ admincode: admincode, id: roomData.ipfsHash, ipfsHash: roomData.ipfsHash }).json();
-    // } else {
-    //   // Handle IPFS upload failure
-    //   return res.json({
-    //     status: 401,
-    //     ok: true,
-    //     data: {
-    //       msg: 'Failed to upload room data to IPFS',
-    //     },
-    //   });
-    // }
+    // windowethereum = req.body.windowEth;
+    console.log('=== roomData ===', roomData);
+    // Create Huddle01 room and join
+    var user = await createAndJoinHuddleRoom();
+
+    roomData.roomId = user[0];
+    roomData.userToken = user[1];
+
+    return res.json({
+      status: 200,
+      ok: true,
+      data: {
+        roomData: roomData,
+      },
+    });
   });
 });
 
