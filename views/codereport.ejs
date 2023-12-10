@@ -61,20 +61,53 @@
                 .then((res) => {
                     if (res.data.status === 200) {
                         console.log(res.data);
-                        let all = res.data.data.code;
+                        let all = res.data.data;
                         for (var x = 0; x < all.length; x++) {
+                            const userName = all[x].username;
 
                             let html = ` <div class="col-10 mx-auto mt-3" id="username">
-                               <div> <p class="fs-4 fw-bold">   ${all[x].username}</p>
+                                <p class="fs-4 fw-bold">
+                                   Student Name :  ${all[x].username} ${all[x].status ? `<span class="badge bg-${all[x].status === 'success' ? 'success' : 'danger'}">${all[x].status}</span>` : ''}
+                                </p>
              
-                </div>
-            </div>
-            <div id='wpcode' class="col-10 mx-auto">
-                <textarea id=${all[x].username} name="code"></textarea>
-            </div>
-            `;
+                                    </div>
+                                </div>
+                                <div id='wpcode' class="col-10 mx-auto">
+                                    <textarea id="${userName}" name="code"></textarea>
+                                </div>
+
+                                <div class="col-10 mx-auto mt-3" id="username">
+                                <p class="fs-4 fw-bold">
+                                    Output Code :
+                                </p>
+             
+                                    </div>
+
+                                <div id='outputCode' class="col-10 mx-auto mt-3">
+                                    <textarea name="outputCode" style="width: 100%; height: 150px; padding: 12px 20px; box-sizing: border-box; border: 2px solid #ccc; border-radius: 4px; background-color: #f8f8f8; font-size: 16px; resize: none;">
+                                        ${all[x].codeOutput}</textarea>
+                                </div>
+
+                                <div class="col-10 mx-auto mt-3" id="username">
+                                <p class="fs-4 fw-bold">
+                                   Score given by AI :  ${all[x].score} / 10
+                                </p>
+                                    </div>
+
+                                    <div class="col-10 mx-auto mt-3" id="desc">
+                                <p class="fs-4 fw-bold">
+                                    Analysis given by AI :
+                                </p>
+                                    </div>
+
+                                    <div id='desc' class="col-10 mx-auto">
+                                    <textarea name="descc" style="width: 100%; height: 150px; padding: 12px 20px; box-sizing: border-box; border: 2px solid #ccc; border-radius: 4px; background-color: #f8f8f8; font-size: 16px; resize: none; vertical-align: top; ">
+                                        ${all[x].description}</textarea>
+                                </div>
+                                `;
                             document.getElementById('alldata').insertAdjacentHTML('beforeend', html)
                             const textinput = document.getElementById(`${all[x].username}`);
+                            console.log(textinput);
                             let editor = CodeMirror.fromTextArea(textinput, {
                                 lineNumbers: true,
                                 tabSize: 2,

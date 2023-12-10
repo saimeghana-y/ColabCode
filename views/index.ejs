@@ -7,20 +7,53 @@
 
 <body>
 
-    <img style="position: absolute; left: 600px;" class="wave" src="images/bg3.svg">
+    <img style="position: absolute; left: 600px;" class="wave" src="/images/13.jpg">
     <div style="position: relative; right: 830px; width: 200vw;" class="container">
         <div class="img1">
             <img src="images/bg1.png">
         </div>
         <div class="login-content">
-            <div style="margin-top: 40px;" class="header"><span> Code / Labs </span></div>
-            <div style="color: whitesmoke; line-height:25px; font-size: 24px; font-weight: 300; padding-top: 30;" class="subheader"><span> Collaborative coding for <p>Teachers & Students</p>  </span></div>
+            <div style="margin-top: 40px;" class="header"><span> Collab Code </span></div>
+            <div style="color: rgb(83,93,209); line-height:25px; font-size: 24px; font-weight: 300; padding-top: 30;" class="subheader"><span> Collaborative coding for <p>Teachers & Students</p>  </span></div>
             <img src="images/avatar.svg">
             <h2 class="title">Welcome</h2>
             <div class="btns">
                 <a href="./create"><button class="btn">Create Room</button></a>
                 <a href="./createClassroom"><button class="btn">Create Classroom</button></a>
                 </div>
+
+            <div class="btns">
+                <button class="btn connect-wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+            </div>
+
+            <script>
+                let connected = false;
+
+                async function connectWallet() {
+                    const { ethereum } = window;
+
+                    if (!ethereum) {
+                        alert("Please install MetaMask to use this feature.");
+                        return;
+                    }
+
+                    try {
+                        const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+
+                        connected = true;
+                        // Update the button text and style
+                        const connectButton = document.querySelector(".connect-wallet-btn");
+                        connectButton.textContent = "Connected";
+                        connectButton.classList.add("connected");
+
+                        // You can now access the user's address
+                        const address = accounts[0];
+                        console.log(`Connected to address: ${address}`);
+                    } catch (error) {
+                        console.error(error);
+                    }
+                }
+            </script>
         </div>
     </div>
 

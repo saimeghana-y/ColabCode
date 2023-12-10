@@ -1,3 +1,5 @@
+const chatGPTUrl = 'https://api.openai.com/v1/chat/completions';
+const apiKey = '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';
 const key = '18371adc6bf78bca7a20';
 const secret = '6cdace2ed18102d7a10e61dd8945bb519ddc08a95e61a96c223732aec7bec78e';
 // const Marketplace = require('../build/contracts/Marketplace.json');
@@ -78,12 +80,16 @@ const fetchRoomDataFromIPFSWithRoomId = async (roomId) => {
 };
 
 // Function to upload code to IPFS
-const uploadCodeToIPFS = async (username, id, code) => {
+const uploadCodeToIPFS = async (username, id, code, parsedResult) => {
   const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
   const codeData = {
     username: username,
     code: code,
-    id: id
+    id: id,
+    status: parsedResult.status,
+    codeOutput: parsedResult.codeOutput,
+    score: parsedResult.score,
+    description: parsedResult.description,
   };
 
   return axios.post(url, codeData, {
@@ -240,7 +246,6 @@ router.post('/create', async (req, res) => {
       languageId: req.body.language,
     };
 
-    // windowethereum = req.body.windowEth;
     console.log('=== roomData ===', roomData);
     return res.json({
       status: 200,
@@ -274,7 +279,6 @@ router.post('/createClassroom', async (req, res) => {
       languageId: req.body.language,
     };
 
-    // windowethereum = req.body.windowEth;
     console.log('=== roomData ===', roomData);
     // Create Huddle01 room and join
     var user = await createAndJoinHuddleRoom();
@@ -292,13 +296,57 @@ router.post('/createClassroom', async (req, res) => {
   });
 });
 
+const ipfsHashes = []; // Initialize an empty array
+
 // Code submission with IPFS integration
 router.post('/submitcode', async (req, res) => {
   const { username, id, code } = req.body;
 
-  // Upload code to IPFS
-  const ipfsHash = await uploadCodeToIPFS(username, id, code);
+  const prompt = `Please analyze and execute the following code:\n${code}\n\nEnsure that the returned output is in JSON format.\nCheck for successful execution of the code or provide a concise error description (e.g., syntax error).\nReturn the final output of the code execution or the error message in the following JSON format status is if executed then success else failed. codeOutput if executed successfully then code output if syntex error or any other error then add one word about error:\n\n"status": "",\n"codeOutput": ""\n\n"score": "your score max 10",\n"description": "",\n\nPlease carefully inspect each line of code, including the presence of semicolons and commas. If any are missing, handle appropriately.\n\nAdditionally, provide a score out of 10 based on the following criteria:\n\n1. Keep it simple.\n2. Use meaningful names.\n3. Comment wisely.\n4. Follow coding standards.\n5. Evaluate the running time (big O notation).\n\nInclude a brief description max of 50 wors for each criterion to justify the assigned score. reduce score if no output is genarated or error`;
 
+  console.log('prompt : ', prompt);
+
+    // Prepare request
+    const promptMessage = {
+      role: 'system',
+      content: prompt,
+    };
+    
+    // Prepare request
+    const response = await fetch(chatGPTUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [promptMessage],
+      }),
+    });
+
+    // Check for errors
+    if (!response.ok) {
+      console.log('response : ', response);
+
+      // throw new Error(`ChatGPT API error: ${response.status}`);
+    }
+
+    // Parse response
+    const chatGPTResult = await response.json();
+    console.log('chatGPTResult : ', chatGPTResult);
+    // const assistantContent = JSON.parse(chatGPTResult.choices[0].message.content);
+    
+    const sanitizedContent = chatGPTResult.choices[0].message.content.replace(/[\n\r]/g, '');
+    const parsedResult = JSON.parse(sanitizedContent);
+    console.log('parsedResult : ', parsedResult);
+
+
+  // Upload code to IPFS
+  const ipfsHash = await uploadCodeToIPFS(username, id, code, parsedResult);
+  ipfsHashes.push(ipfsHash);
+  console.log('new ipfsHash : ', ipfsHash);
+  console.log('ipfsHashes : ', ipfsHashes);
   if (!ipfsHash) {
     return res.json({
       status: 500,
@@ -319,29 +367,38 @@ router.post('/submitcode', async (req, res) => {
   });
 });
 
-// Generate Report
-router.post('/getcode', (req, res) => {
-  console.log(req.body.roomId);
-  userModal.find({ roomId: req.body.roomId }, function (err, Data) {
-    if (!err)
-      return res.json({
-        status: 200,
+router.post('/getcode', async (req, res) => {
+  console.log('fsa ', req.body.roomId);
 
-        data: {
-          code: Data,
-          labname: req.labname,
-        },
-      });
-    else {
-      return res.json({
-        status: 401,
 
-        data: {
-          msg: 'Some Error Occured',
-        },
-      });
-    }
+  const fetchedData = [];
+// Loop through IPFS hashes and fetch code using your implementation
+for (const ipfsHash of ipfsHashes) {
+  console.log('ipfsHash : ', ipfsHash);
+  // Fetch data from IPFS using ipfsHash
+  const dataObject = await fetchRoomDataFromIPFSWithRoomId(ipfsHash);
+  console.log('dataObject : ', dataObject);
+  if (!dataObject) {
+    console.error('Error fetching data for IPFS hash:', ipfsHash);
+    continue; // Skip to next iteration if data fetch fails
+  }
+  console.log('dataObject : ', dataObject);
+
+  // Add data object to fetchedData array
+  fetchedData.push({
+    ipfsHash,
+    ...dataObject, // Include all properties of the fetched data object
   });
+}
+console.log('fetchedData : ', fetchedData);
+
+// Send response with fetched data
+res.json({
+  status: 200,
+  ok: true,
+  data: fetchedData,
 });
+}
+);
 
 module.exports = router;
